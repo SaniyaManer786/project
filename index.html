@@ -1,0 +1,156 @@
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Maintenance Reminder App</title>
+    <style>
+        body {
+            font-family: "Arial", sans-serif;
+            background-color: #eaeaea;
+        }
+        .container {
+            max-width: 500px;
+            margin: auto;
+            background-color: hsl(0, 7%, 92%);
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        label, input, button {
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+        input {
+            width: 100%;
+            margin-top: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 5px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        th {
+            background-color: #4caf50;
+            color: white;
+        }
+        button {
+            background-color: #4caf50;
+            color: white;
+            padding: 5px;
+            border: none;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2 style="text-align: center;">Maintenance Reminder App</h2>
+    <form action="server.php" method="POST">
+        <label for="EquipmentName">Equipment Name:</label>
+        <input type="text" name="EquipmentName" id="EquipmentName" required>
+
+        <label for="MaintenanceWork">Maintenance Work:</label>
+        <input type="text" name="MaintenanceWork" id="MaintenanceWork" required>
+
+        <label for="Date">Date:</label>
+        <input type="date" name="Date" id="Date" required>
+
+        <label for="Time">Time:</label>
+        <input type="time" name="Time" id="Time" required>
+
+        <input type="submit" name="ScheduleReminder" value="Schedule Reminder">
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Equipment Name</th>
+                <th>Maintenance Work</th>
+                <th>Date & Time</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="reminderTableBody">
+            <!-- Reminders will be added here dynamically -->
+        </tbody>
+    </table>
+</div>
+
+<audio src="notificationsoundeffect.mp3" id="notificationSound"></audio>
+
+<script>
+    // Ask user to allow notification access
+    if ("Notification" in window) {
+        Notification.requestPermission().then(function(permission) {
+            if (Notification.permission !== "granted") {
+                alert("Please allow notification access!");
+                location.reload();
+            }
+        });
+    }
+
+    var timeoutIds = [];
+
+    function ScheduleReminder() {
+        var equipmentName = document.getElementById("EquipmentName").value;
+        var maintenanceWork = document.getElementById("MaintenanceWork").value;
+        var date = document.getElementById("Date").value;
+        var time = document.getElementById("Time").value;
+        var dateTimeString = date + " " + time;
+        var scheduleTime = new Date(dateTimeString);
+        var currentTime = new Date();
+
+        var timeDifference = scheduleTime - currentTime;
+        if (timeDifference > 0) {
+            addReminder(equipmentName, maintenanceWork, dateTimeString);
+
+            var timeoutId = setTimeout(function() {
+                document.getElementById("notificationSound").play();
+                var notification = new Notification(equipmentName, {
+                    body: maintenanceWork,
+                    requireInteraction: true,
+                });
+            }, timeDifference);
+
+            timeoutIds.push(timeoutId);
+        } else {
+            alert("The scheduled time is in the past!");
+        }
+    }
+
+    function addReminder(equipmentName, maintenanceWork, dateTimeString) {
+        var tableBody = document.getElementById("reminderTableBody");
+        var row = tableBody.insertRow();
+
+        var equipmentNameCell = row.insertCell(0);
+        var maintenanceWorkCell = row.insertCell(1);
+        var dateTimeCell = row.insertCell(2);
+        var actionCell = row.insertCell(3);
+
+        equipmentNameCell.innerHTML = equipmentName;
+        maintenanceWorkCell.innerHTML = maintenanceWork;
+        dateTimeCell.innerHTML = dateTimeString;
+        actionCell.innerHTML = '<button onclick="deleteReminder(this);">Delete</button>';
+    }
+
+    function deleteReminder(button) {
+        var row = button.closest("tr");
+        var index = row.rowIndex;
+        clearTimeout(timeoutIds[index - 1]);
+        timeoutIds.splice(index - 1, 1);
+        row.remove();
+    }
+</script>
+</body>
+</html>
+
+
+    
